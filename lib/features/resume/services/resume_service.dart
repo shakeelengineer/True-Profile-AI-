@@ -25,7 +25,7 @@ class ResumeService {
     try {
       // For Physical Device: Use your PC's LAN IP (e.g., 192.168.10.5)
       // For Emulator: Use 10.0.2.2
-      const String backendUrl = 'http://192.168.10.3:8000/analyze-resume';
+      const String backendUrl = 'http://192.168.10.4:8000/analyze-resume';
       
       var request = http.MultipartRequest('POST', Uri.parse(backendUrl));
       request.files.add(await http.MultipartFile.fromPath('file', file.path));

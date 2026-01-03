@@ -12,276 +12,284 @@ class HomeScreen extends ConsumerWidget {
     final user = authState?.session?.user;
     final userName = user?.email?.split('@').first ?? 'User';
 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final authState = ref.watch(authStateProvider).value;
+    final user = authState?.session?.user;
+    final userName = user?.email?.split('@').first ?? 'User';
+    final String displayUserName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Custom App Bar with Profile
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        // Logo
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF00D9FF),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.shield_outlined,
-                            color: Color(0xFF0A0E27),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        RichText(
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: 'True-Profile ',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              TextSpan(
-                                text: 'AI',
-                                style: TextStyle(color: Color(0xFF00D9FF)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Spacer(),
-                        // Notifications
-                        Container(
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF141B2D),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.notifications_outlined),
-                            color: Colors.white,
-                            onPressed: () {},
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Profile Avatar
-                        GestureDetector(
-                          onTap: () => context.push('/profile'),
-                          child: Container(
-                            width: 40,
-                            height: 40,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.scaffoldBackgroundColor,
+              theme.colorScheme.surface.withOpacity(0.8),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Custom App Bar with Profile
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          // Logo
+                          Container(
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
+                              color: theme.primaryColor,
                               shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF00D9FF), Color(0xFF1AA2E6)],
+                            ),
+                            child: Icon(
+                              Icons.shield_outlined,
+                              color: theme.scaffoldBackgroundColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF00D9FF).withOpacity(0.3),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
+                              children: [
+                                const TextSpan(
+                                  text: 'True-Profile ',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                TextSpan(
+                                  text: 'AI',
+                                  style: TextStyle(color: theme.primaryColor),
                                 ),
                               ],
                             ),
-                            child: Center(
-                              child: Text(
-                                userName[0].toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                          ),
+                          const Spacer(),
+                          // Notifications
+                          _buildCircleButton(Icons.notifications_outlined, theme, () {}),
+                          const SizedBox(width: 12),
+                          // Profile Avatar
+                          GestureDetector(
+                            onTap: () => context.push('/profile'),
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: theme.primaryColor.withOpacity(0.5), width: 2),
+                                gradient: LinearGradient(
+                                  colors: [theme.primaryColor, theme.colorScheme.secondary],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.primaryColor.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  userName[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // Welcome Message
-                    Text(
-                      'Welcome back,',
-                      style: TextStyle(
-                        color: const Color(0xFFA1A1AA),
-                        fontSize: 16,
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      userName.substring(0, 1).toUpperCase() + userName.substring(1),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 32),
+                      
+                      // Welcome Message
+                      Text(
+                        'Welcome back,',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    // Stats Cards
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            '3',
-                            'Verifications',
-                            Icons.verified_user,
-                            const Color(0xFF00D9FF),
-                          ),
+                      const SizedBox(height: 4),
+                      Text(
+                        displayUserName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            '67%',
-                            'Profile Complete',
-                            Icons.pie_chart,
-                            const Color(0xFFFDB241),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            
-            // Verification Progress
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Verification Progress',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+              
+              // Stats Highlight
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          theme,
+                          '3',
+                          'Verifications',
+                          Icons.verified_user_rounded,
+                          theme.primaryColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildProgressCard(),
-                  ],
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          theme,
+                          '67%',
+                          'Completion',
+                          Icons.insights_rounded,
+                          const Color(0xFFFDB241),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            
-            // Features Section
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Verification Services',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+              
+              // Verification Progress
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Active Progress',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                        TextButton(
-                          onPressed: () => context.push('/results'),
-                          child: const Text(
-                            'View All',
-                            style: TextStyle(color: Color(0xFF00D9FF)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProgressCard(theme),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            
-            // Feature Cards Grid
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFeatureCard(
-                    context,
-                    title: 'Identity Verification',
-                    description: 'AI-powered face verification',
-                    icon: Icons.face,
-                    route: '/identity',
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF00D9FF), Color(0xFF1AA2E6)],
-                    ),
-                    status: 'Pending',
-                    statusColor: const Color(0xFFFDB241),
+              
+              // Verification Services Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Core Services',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/results'),
+                        child: Text(
+                          'View History',
+                          style: TextStyle(color: theme.primaryColor),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  _buildFeatureCard(
-                    context,
-                    title: 'Resume Analysis',
-                    description: 'Get instant ATS compatibility score',
-                    icon: Icons.description,
-                    route: '/resume',
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
-                    ),
-                    status: 'Not Started',
-                    statusColor: const Color(0xFFA1A1AA),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFeatureCard(
-                    context,
-                    title: 'Skill Verification',
-                    description: 'Prove your skills with AI quizzes',
-                    icon: Icons.school,
-                    route: '/skills',
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFEC4899), Color(0xFFF43F5E)],
-                    ),
-                    status: 'Completed',
-                    statusColor: const Color(0xFF00E676),
-                  ),
-                  const SizedBox(height: 32),
-                ]),
+                ),
               ),
-            ),
-          ],
+              
+              // Feature Cards List
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildFeatureCard(
+                      context,
+                      theme,
+                      title: 'Identity Verification',
+                      description: 'AI-powered face & ID validation',
+                      icon: Icons.face_retouching_natural_rounded,
+                      route: '/identity',
+                      gradient: LinearGradient(
+                        colors: [theme.primaryColor, theme.colorScheme.secondary],
+                      ),
+                      status: 'Pending',
+                      statusColor: const Color(0xFFFDB241),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFeatureCard(
+                      context,
+                      theme,
+                      title: 'Resume Analysis',
+                      description: 'Get instant ATS compatibility score',
+                      icon: Icons.description_rounded,
+                      route: '/resume',
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
+                      ),
+                      status: 'Not Started',
+                      statusColor: const Color(0xFFA1A1AA),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFeatureCard(
+                      context,
+                      theme,
+                      title: 'Skill Verification',
+                      description: 'Prove your skills with AI quizzes',
+                      icon: Icons.psychology_rounded,
+                      route: '/skills',
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFEC4899), Color(0xFFF43F5E)],
+                      ),
+                      status: 'Completed',
+                      statusColor: const Color(0xFF10B981),
+                    ),
+                    const SizedBox(height: 40),
+                  ]),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       
-      // Bottom Navigation
+      // Modern Bottom Navigation
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF141B2D),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
+          color: theme.colorScheme.surface,
+          border: Border(top: BorderSide(color: theme.colorScheme.outline.withOpacity(0.3))),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(Icons.home, 'Home', true, () {}),
-                _buildNavItem(Icons.assessment, 'Results', false, () => context.push('/results')),
-                _buildNavItem(Icons.person, 'Profile', false, () => context.push('/profile')),
-                _buildNavItem(Icons.logout, 'Logout', false, () {
+                _buildNavItem(Icons.grid_view_rounded, 'Dashboard', true, theme, () {}),
+                _buildNavItem(Icons.analytics_outlined, 'Results', false, theme, () => context.push('/results')),
+                _buildNavItem(Icons.person_outline_rounded, 'Profile', false, theme, () => context.push('/profile')),
+                _buildNavItem(Icons.power_settings_new_rounded, 'Logout', false, theme, () {
                   ref.read(authServiceProvider).signOut();
                 }),
               ],
@@ -292,33 +300,55 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon, Color color) {
+  Widget _buildCircleButton(IconData icon, ThemeData theme, VoidCallback onTap) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F2937)),
+        color: theme.colorScheme.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.5)),
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white, size: 22),
+        onPressed: onTap,
+      ),
+    );
+  }
+
+  Widget _buildStatCard(ThemeData theme, String value, String label, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 16),
           Text(
             value,
-            style: TextStyle(
-              color: color,
-              fontSize: 24,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Color(0xFFA1A1AA),
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
               fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -326,13 +356,21 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProgressCard() {
+  Widget _buildProgressCard(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F2937)),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.surface,
+            theme.primaryColor.withOpacity(0.05),
+          ],
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,49 +379,56 @@ class HomeScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                '2 of 3 Completed',
+                'Verification Journey',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                '67%',
-                style: TextStyle(
-                  color: const Color(0xFF00D9FF),
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '67%',
+                  style: TextStyle(
+                    color: theme.primaryColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: 0.67,
-              backgroundColor: const Color(0xFF0A0E27),
-              color: const Color(0xFF00D9FF),
-              minHeight: 8,
+              backgroundColor: theme.scaffoldBackgroundColor,
+              color: theme.primaryColor,
+              minHeight: 10,
             ),
           ),
-          const SizedBox(height: 16),
-          _buildProgressItem('Identity Verification', true, const Color(0xFFFDB241)),
-          const SizedBox(height: 8),
-          _buildProgressItem('Resume Analysis', false, const Color(0xFFA1A1AA)),
-          const SizedBox(height: 8),
-          _buildProgressItem('Skill Verification', true, const Color(0xFF00E676)),
+          const SizedBox(height: 24),
+          _buildProgressItem(theme, 'Identity Check', true, theme.primaryColor),
+          const SizedBox(height: 12),
+          _buildProgressItem(theme, 'Resume Verification', false, theme.colorScheme.onSurface.withOpacity(0.3)),
+          const SizedBox(height: 12),
+          _buildProgressItem(theme, 'Expertise Validation', true, const Color(0xFF10B981)),
         ],
       ),
     );
   }
 
-  Widget _buildProgressItem(String title, bool completed, Color color) {
+  Widget _buildProgressItem(ThemeData theme, String title, bool completed, Color color) {
     return Row(
       children: [
         Icon(
-          completed ? Icons.check_circle : Icons.radio_button_unchecked,
+          completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
           color: color,
           size: 20,
         ),
@@ -391,8 +436,9 @@ class HomeScreen extends ConsumerWidget {
         Text(
           title,
           style: TextStyle(
-            color: completed ? Colors.white : const Color(0xFFA1A1AA),
+            color: completed ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.5),
             fontSize: 14,
+            fontWeight: completed ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ],
@@ -400,7 +446,8 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildFeatureCard(
-    BuildContext context, {
+    BuildContext context, 
+    ThemeData theme, {
     required String title,
     required String description,
     required IconData icon,
@@ -409,32 +456,33 @@ class HomeScreen extends ConsumerWidget {
     required String status,
     required Color statusColor,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: () => context.push(route),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF141B2D),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF1F2937)),
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.5)),
         ),
         child: Row(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 gradient: gradient,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: gradient.colors.first.withOpacity(0.3),
-                    blurRadius: 12,
+                    blurRadius: 15,
                     spreadRadius: 2,
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: 28),
+              child: Icon(icon, color: Colors.white, size: 30),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -445,41 +493,43 @@ class HomeScreen extends ConsumerWidget {
                     title,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: const TextStyle(
-                      color: Color(0xFFA1A1AA),
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: statusColor.withOpacity(0.2)),
                     ),
                     child: Text(
-                      status,
+                      status.toUpperCase(),
                       style: TextStyle(
                         color: statusColor,
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Color(0xFFA1A1AA),
-              size: 16,
+            Icon(
+              Icons.chevron_right_rounded,
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
+              size: 24,
             ),
           ],
         ),
@@ -487,27 +537,34 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isActive, VoidCallback onTap) {
+  Widget _buildNavItem(IconData icon, String label, bool isActive, ThemeData theme, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isActive ? const Color(0xFF00D9FF) : const Color(0xFFA1A1AA),
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? const Color(0xFF00D9FF) : const Color(0xFFA1A1AA),
-              fontSize: 11,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? theme.primaryColor.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isActive ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.4),
+              size: 24,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.4),
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

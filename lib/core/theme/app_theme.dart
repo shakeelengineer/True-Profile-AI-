@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Brand Colors
-  static const Color primaryColor = Color(0xFF3EE0CF); // Vibrant Cyan
-  static const Color secondaryColor = Color(0xFF1AA2E6); // Sky Blue (for gradients)
-  static const Color backgroundColor = Color(0xFF080C16); // Deep Navy
-  static const Color surfaceColor = Color(0xFF191F2E); // Dark Blue-Gray
-  static const Color borderColor = Color(0xFF20283C); // Muted Blue
-
-  static const Color textPrimary = Color(0xFFF8FAFC); // Off-white
-  static const Color textSecondary = Color(0xFF94A3B8); // Slate Gray
+  // Brand Colors (True Vibe Standard)
+  static const Color primaryColor = Color(0xFF00D9FF); // Vibrant Cyan
+  static const Color secondaryColor = Color(0xFF1AA2E6); // Sky Blue
+  static const Color backgroundColor = Color(0xFF0A0E27); // Deep Navy
+  static const Color surfaceColor = Color(0xFF141B2D); // Darker Blue-Gray (Cards/Inputs)
+  static const Color borderColor = Color(0xFF1F2937); // Muted Border
+  
+  static const Color textPrimary = Color(0xFFFFFFFF); // Pure White
+  static const Color textSecondary = Color(0xFFA1A1AA); // Slate Gray
+  static const Color accentColor = Color(0xFF3EE0CF); // Vibrant Mint/Cyan
 
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
@@ -23,6 +24,8 @@ class AppTheme {
       surface: surfaceColor,
       background: backgroundColor,
       onSurface: textPrimary,
+      onBackground: textPrimary,
+      outline: borderColor,
     ),
     textTheme: GoogleFonts.outfitTextTheme().apply(
       bodyColor: textPrimary,
@@ -34,45 +37,47 @@ class AppTheme {
         backgroundColor: primaryColor,
         elevation: 0,
         textStyle: GoogleFonts.outfit(
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(30),
         ),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: surfaceColor,
-      contentPadding: const EdgeInsets.all(20),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: borderColor, width: 1),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: borderColor, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
       labelStyle: const TextStyle(color: textSecondary),
       hintStyle: const TextStyle(color: textSecondary),
+      prefixIconColor: textSecondary,
+      suffixIconColor: textSecondary,
     ),
     cardTheme: CardThemeData(
       color: surfaceColor,
-      elevation: 8,
-      shadowColor: Colors.black.withOpacity(0.2),
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
+        side: const BorderSide(color: borderColor, width: 1),
       ),
       margin: const EdgeInsets.only(bottom: 16),
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       titleTextStyle: GoogleFonts.outfit(
@@ -84,7 +89,6 @@ class AppTheme {
     ),
   );
 
-  // For this design system, we mainly focus on the dark mode aesthetic
-  // so we'll map darkTheme to be similar or the same as standard theme if usage dictates
   static final ThemeData darkTheme = lightTheme; 
 }
+

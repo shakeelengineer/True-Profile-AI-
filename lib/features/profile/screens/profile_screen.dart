@@ -68,28 +68,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Profile Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           if (!_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => setState(() => _isEditing = true),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.edit_rounded, color: theme.primaryColor, size: 20),
+                ),
+                onPressed: () => setState(() => _isEditing = true),
+              ),
             )
           else
-            TextButton(
-              onPressed: _isSaving ? null : _saveProfile,
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Save', style: TextStyle(color: Color(0xFF00D9FF))),
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: _isSaving 
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                : TextButton(
+                    onPressed: _saveProfile,
+                    child: Text('Done', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold)),
+                  ),
             ),
         ],
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
@@ -98,28 +111,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 130,
+                  height: 130,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF00D9FF), Color(0xFF1AA2E6)],
+                    gradient: LinearGradient(
+                      colors: [theme.primaryColor, theme.colorScheme.secondary],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF00D9FF).withOpacity(0.3),
-                        blurRadius: 20,
-                        spreadRadius: 5,
+                        color: theme.primaryColor.withOpacity(0.3),
+                        blurRadius: 25,
+                        spreadRadius: 8,
                       ),
                     ],
+                    border: Border.all(color: Colors.white.withOpacity(0.1), width: 4),
                   ),
                   child: Center(
                     child: Text(
                       user?.email?.substring(0, 1).toUpperCase() ?? 'U',
                       style: const TextStyle(
-                        fontSize: 48,
+                        fontSize: 52,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -128,15 +142,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 if (_isEditing)
                   Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF00D9FF),
-                        shape: BoxShape.circle,
+                    bottom: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: () {}, // TODO: Implement image picker
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: theme.scaffoldBackgroundColor, width: 3),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, 4))
+                          ],
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
                       ),
-                      child: const Icon(Icons.camera_alt, size: 20, color: Color(0xFF0A0E27)),
                     ),
                   ),
               ],
@@ -147,65 +168,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // User Email
             Text(
               user?.email ?? 'user@example.com',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: const Color(0xFFA1A1AA),
-                fontSize: 16,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 1.1,
               ),
             ),
             
             const SizedBox(height: 32),
             
-            // Verification Status Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatusCard(
-                    'Identity',
-                    Icons.face,
-                    'Pending',
-                    const Color(0xFFFDB241),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatusCard(
-                    'Resume',
-                    Icons.description,
-                    'Not Started',
-                    const Color(0xFFA1A1AA),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatusCard(
-                    'Skills',
-                    Icons.school,
-                    'Verified',
-                    const Color(0xFF00E676),
-                  ),
-                ),
-              ],
+            // Verification Status Row
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatusItem(theme, 'Identity', Icons.verified_user_rounded, 'Pending', const Color(0xFFFDB241)),
+                  _buildStatusDivider(theme),
+                  _buildStatusItem(theme, 'Resume', Icons.description_rounded, 'None', const Color(0xFFA1A1AA)),
+                  _buildStatusDivider(theme),
+                  _buildStatusItem(theme, 'Skills', Icons.psychology_rounded, 'Verified', const Color(0xFF10B981)),
+                ],
+              ),
             ),
             
             const SizedBox(height: 32),
             
             // Profile Information
-            _buildSectionHeader('Personal Information'),
+            _buildSectionHeader(theme, 'Account Basics'),
             const SizedBox(height: 16),
             
             _buildTextField(
+              theme: theme,
               controller: _nameController,
-              label: 'Full Name',
-              icon: Icons.person_outline,
+              label: 'Display Name',
+              icon: Icons.person_rounded,
               enabled: _isEditing,
             ),
             
             const SizedBox(height: 16),
             
             _buildTextField(
+              theme: theme,
               controller: _phoneController,
-              label: 'Phone Number',
-              icon: Icons.phone_outlined,
+              label: 'Connect Phone',
+              icon: Icons.phone_rounded,
               enabled: _isEditing,
               keyboardType: TextInputType.phone,
             ),
@@ -213,138 +226,90 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 16),
             
             _buildTextField(
+              theme: theme,
               controller: _bioController,
-              label: 'Bio',
-              icon: Icons.info_outline,
+              label: 'Professional Bio',
+              icon: Icons.auto_awesome_rounded,
               enabled: _isEditing,
               maxLines: 3,
             ),
             
             const SizedBox(height: 32),
             
-            // Account Actions
-            _buildSectionHeader('Account Settings'),
+            // Actions
+            _buildSectionHeader(theme, 'Security & Legal'),
             const SizedBox(height: 16),
             
-            _buildActionTile(
-              'Reset Password',
-              Icons.lock_reset,
-              () {
-                context.push('/reset-password');
-              },
-            ),
-            
+            _buildActionTile(theme, 'Change Access Token', Icons.lock_person_rounded, () => context.push('/reset-password')),
             const SizedBox(height: 12),
-            
-            _buildActionTile(
-              'Privacy Policy',
-              Icons.privacy_tip_outlined,
-              () {
-                context.push('/privacy-policy');
-              },
-            ),
-            
+            _buildActionTile(theme, 'Privacy Charter', Icons.gavel_rounded, () => context.push('/privacy-policy')),
             const SizedBox(height: 12),
+            _buildActionTile(theme, 'Project Genesis', Icons.info_rounded, () => context.push('/about')),
             
-            _buildActionTile(
-              'About',
-              Icons.info_outline,
-              () {
-                context.push('/about');
-              },
-            ),
+            const SizedBox(height: 40),
             
-            const SizedBox(height: 32),
-            
-            // Logout Button
+            // Logout
             SizedBox(
               width: double.infinity,
-              height: 56,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(authServiceProvider).signOut();
-                },
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+              height: 60,
+              child: ElevatedButton.icon(
+                onPressed: () => ref.read(authServiceProvider).signOut(),
+                icon: const Icon(Icons.power_settings_new_rounded),
+                label: const Text('DISCONNECT ACCOUNT'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent.withOpacity(0.1),
+                  foregroundColor: Colors.redAccent,
+                  elevation: 0,
+                  side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 ),
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusCard(String title, IconData icon, String status, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildStatusItem(ThemeData theme, String title, IconData icon, String status, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+          child: Text(status, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800)),
+        ),
+      ],
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildStatusDivider(ThemeData theme) {
+    return Container(height: 30, width: 1, color: theme.colorScheme.outline.withOpacity(0.2));
+  }
+
+  Widget _buildSectionHeader(ThemeData theme, String title) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+        title.toUpperCase(),
+        style: TextStyle(
+          color: theme.primaryColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
         ),
       ),
     );
   }
 
   Widget _buildTextField({
+    required ThemeData theme,
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -357,59 +322,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       enabled: enabled,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      style: TextStyle(
-        color: enabled ? Colors.white : const Color(0xFFA1A1AA),
-      ),
+      style: TextStyle(color: enabled ? Colors.white : Colors.white38),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFFA1A1AA)),
+        prefixIcon: Icon(icon, size: 20, color: enabled ? theme.primaryColor : Colors.white24),
         filled: true,
-        fillColor: const Color(0xFF141B2D),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1F2937)),
-        ),
+        fillColor: theme.colorScheme.surface,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1F2937)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF00D9FF)),
+          borderRadius: BorderRadius.circular(16), 
+          borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.3))
         ),
         disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1F2937)),
+          borderRadius: BorderRadius.circular(16), 
+          borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.1))
         ),
-        labelStyle: TextStyle(
-          color: enabled ? const Color(0xFFA1A1AA) : const Color(0xFF6B7280),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16), 
+          borderSide: BorderSide(color: theme.primaryColor, width: 2)
         ),
       ),
     );
   }
 
-  Widget _buildActionTile(String title, IconData icon, VoidCallback onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1F2937)),
+  Widget _buildActionTile(ThemeData theme, String title, IconData icon, VoidCallback onTap) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      tileColor: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.3)),
       ),
-      child: ListTile(
-        leading: Icon(icon, color: const Color(0xFFA1A1AA)),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFFA1A1AA)),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: theme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: theme.primaryColor, size: 20),
       ),
+      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      trailing: Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurface.withOpacity(0.3)),
     );
   }
 }

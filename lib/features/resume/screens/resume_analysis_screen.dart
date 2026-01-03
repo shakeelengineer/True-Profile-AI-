@@ -54,20 +54,24 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
     try {
       final file = File(_pickedFile!.path!);
       
-      // We'll call the API first, then simulate the UI steps for a better experience
-      final apiResult = await _resumeService.analyzeResume(file);
-
+      // Start API call and simulated steps in parallel
+      final apiFuture = _resumeService.analyzeResume(file);
+      
+      // Animation handling
       for (int i = 0; i < steps.length; i++) {
         if (!mounted) return;
         setState(() {
           _scanningStep = steps[i];
-          _scanningProgress = (i + 1) / steps.length;
+          _scanningProgress = (i + 1) / (steps.length + 1); // Save some progress for completion
         });
-        await Future.delayed(const Duration(milliseconds: 800));
+        await Future.delayed(const Duration(milliseconds: 400));
       }
+
+      final apiResult = await apiFuture;
       
       if (apiResult != null && mounted) {
         setState(() {
+          _scanningProgress = 1.0;
           _analysisResults = apiResult;
           _isAnalyzing = false;
         });
@@ -104,10 +108,29 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('JustScreen AI Analyzer', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.primaryColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.shield_outlined,
+                color: theme.scaffoldBackgroundColor,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('JustScreen AI', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -117,8 +140,8 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              Theme.of(context).colorScheme.surface,
+              theme.primaryColor.withOpacity(0.05),
+              theme.scaffoldBackgroundColor,
             ],
           ),
         ),
@@ -129,30 +152,30 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildFairnessBanner(),
+                _buildFairnessBanner(theme),
                 const SizedBox(height: 24),
                 if (_pickedFile != null && !_isAnalyzing && _analysisResults == null) 
-                  _buildFilePreview()
+                  _buildFilePreview(theme)
                 else if (_analysisResults == null && !_isAnalyzing)
-                  _buildUploadZone(),
+                  _buildUploadZone(theme),
                 
                 if (_isAnalyzing)
-                  _buildScanningState(),
+                  _buildScanningState(theme),
                   
                 if (_analysisResults != null) ...[
-                  _buildScoreDisplay(),
+                  _buildScoreDisplay(theme),
                   const SizedBox(height: 24),
-                  _buildSectionChecklist(),
+                  _buildSectionChecklist(theme),
                   const SizedBox(height: 24),
-                  _buildFeedbackTabs(),
+                  _buildFeedbackTabs(theme),
                   const SizedBox(height: 16),
-                  _buildReuploadButton(),
+                  _buildReuploadButton(theme),
                 ],
                 
                 if (!_isAnalyzing && _analysisResults == null)
                   Padding(
                     padding: const EdgeInsets.only(top: 24),
-                    child: _buildActionButton(),
+                    child: _buildActionButton(theme),
                   ),
               ],
             ),
@@ -162,22 +185,22 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
     );
   }
 
-  Widget _buildFairnessBanner() {
+  Widget _buildFairnessBanner(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
+        color: theme.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        border: Border.all(color: theme.primaryColor.withOpacity(0.3)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.verified_user_rounded, color: Colors.blue, size: 20),
+          Icon(Icons.verified_user_rounded, color: theme.primaryColor, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Ethical AI Enabled: We strip personal data to ensure your score is based purely on merit and skills.',
-              style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 12, color: theme.primaryColor, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -185,16 +208,16 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
     );
   }
 
-  Widget _buildUploadZone() {
+  Widget _buildUploadZone(ThemeData theme) {
     return InkWell(
       onTap: _pickFile,
       borderRadius: BorderRadius.circular(24),
       child: Container(
         height: 220,
         decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.2), width: 2),
-          color: Theme.of(context).colorScheme.surface,
+          border: Border.all(color: theme.primaryColor.withOpacity(0.2), width: 2),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -202,16 +225,16 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                color: theme.primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.upload_file_rounded, size: 50, color: Theme.of(context).primaryColor),
+              child: Icon(Icons.upload_file_rounded, size: 50, color: theme.primaryColor),
             ),
             const SizedBox(height: 20),
             const Text('Upload Your CV / Resume', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text('Supports PDF & DOCX (Max 5MB)', 
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))
+              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))
             ),
           ],
         ),
@@ -219,18 +242,19 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
     );
   }
 
-  Widget _buildFilePreview() {
+  Widget _buildFilePreview(ThemeData theme) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.3)),
+        border: Border.all(color: theme.primaryColor.withOpacity(0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Row(
           children: [
-            const Icon(Icons.description_rounded, size: 40, color: Colors.grey),
+            Icon(Icons.description_rounded, size: 40, color: theme.primaryColor.withOpacity(0.7)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -238,7 +262,7 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
                 children: [
                   Text(_pickedFile!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   Text('${(_pickedFile!.size / 1024).toStringAsFixed(1)} KB', 
-                    style: TextStyle(color: Colors.grey.shade600)
+                    style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))
                   ),
                 ],
               ),
@@ -253,7 +277,7 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
     );
   }
 
-  Widget _buildScanningState() {
+  Widget _buildScanningState(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Column(
@@ -266,50 +290,51 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
               children: [
                 CircularProgressIndicator(
                   value: _scanningProgress,
-                  strokeWidth: 10,
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                  strokeWidth: 8,
+                  backgroundColor: theme.primaryColor.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
                 ),
                 Text('${(_scanningProgress * 100).toInt()}%', 
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)
+                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)
                 ),
               ],
             ),
           ),
           const SizedBox(height: 32),
           Text(_scanningStep, 
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blueGrey)
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: theme.primaryColor)
           ),
           const SizedBox(height: 8),
-          const Text('Analyzing for JustScreen compliance...', 
-            style: TextStyle(fontSize: 12, color: Colors.grey)
+          Text('Analyzing for JustScreen compliance...', 
+            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5))
           ),
         ],
       ),
     );
   }
 
-  Widget _buildScoreDisplay() {
+  Widget _buildScoreDisplay(ThemeData theme) {
     final int score = (_analysisResults?['resume_score'] as num? ?? 0).toInt();
     Color scoreColor;
     String statusText;
     
     if (score >= 80) {
-      scoreColor = Colors.green;
+      scoreColor = const Color(0xFF10B981); // Emerald
       statusText = 'STRONG';
     } else if (score >= 50) {
-      scoreColor = Colors.orange;
+      scoreColor = const Color(0xFFF59E0B); // Amber
       statusText = 'AVERAGE';
     } else {
-      scoreColor = Colors.red;
+      scoreColor = const Color(0xFFEF4444); // Red
       statusText = 'WEAK';
     }
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: scoreColor.withOpacity(0.3), width: 2),
         boxShadow: [
           BoxShadow(
             color: scoreColor.withOpacity(0.1),
@@ -317,12 +342,11 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
             spreadRadius: 5,
           )
         ],
-        border: Border.all(color: scoreColor.withOpacity(0.2)),
       ),
       child: Column(
         children: [
-          const Text('Your Resume Check Score', 
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A237E))
+          Text('ATS Compatibility Score', 
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.6), letterSpacing: 1.2)
           ),
           const SizedBox(height: 24),
           Row(
@@ -332,16 +356,16 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
                 alignment: Alignment.center,
                 children: [
                    SizedBox(
-                    height: 120,
-                    width: 120,
+                    height: 110,
+                    width: 110,
                     child: CircularProgressIndicator(
                       value: score / 100,
-                      strokeWidth: 12,
+                      strokeWidth: 10,
                       backgroundColor: scoreColor.withOpacity(0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
                     ),
                   ),
-                  Text('$score', style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: scoreColor)),
+                  Text('$score', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: scoreColor)),
                 ],
               ),
               const SizedBox(width: 30),
@@ -350,18 +374,19 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(statusText, style: TextStyle(
-                      fontSize: 32, 
+                      fontSize: 28, 
                       fontWeight: FontWeight.bold, 
                       color: scoreColor
                     )),
+                    const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: scoreColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text('RESUME STRENGTH', 
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: scoreColor)
+                      child: Text('PROFILE RATING', 
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: scoreColor)
                       ),
                     ),
                   ],
@@ -373,14 +398,14 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
           Text(
             _analysisResults?['ats_feedback'] ?? '',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 15, color: Colors.blueGrey.shade700, fontStyle: FontStyle.italic),
+            style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.8), fontStyle: FontStyle.italic),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionChecklist() {
+  Widget _buildSectionChecklist(ThemeData theme) {
     final sections = (list: _analysisResults?['sections_found'] as List<dynamic>? ?? []);
     final List<String> required = ['education', 'experience', 'skills', 'projects', 'certifications'];
     
@@ -394,7 +419,7 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 3.5,
+            childAspectRatio: 3.2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),
@@ -402,59 +427,61 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
           itemBuilder: (context, index) {
             final section = required[index];
             final bool found = sections.list.map((e) => e.toString().toLowerCase()).contains(section);
-            return _buildSectionItem(section.toUpperCase(), found);
+            return _buildSectionItem(theme, section.toUpperCase(), found);
           },
         ),
       ],
     );
   }
 
-  Widget _buildSectionItem(String label, bool found) {
+  Widget _buildSectionItem(ThemeData theme, String label, bool found) {
+    final color = found ? theme.primaryColor : Colors.redAccent;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: found ? Colors.green.withOpacity(0.05) : Colors.red.withOpacity(0.05),
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: found ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Icon(found ? Icons.check_circle_rounded : Icons.cancel_rounded, 
-            size: 18, color: found ? Colors.green : Colors.redAccent),
+            size: 18, color: color),
           const SizedBox(width: 8),
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
         ],
       ),
     );
   }
 
-  Widget _buildFeedbackTabs() {
+  Widget _buildFeedbackTabs(ThemeData theme) {
     return Container(
       height: 480,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
       ),
       child: DefaultTabController(
         length: 2,
         child: Column(
           children: [
             TabBar(
-              labelColor: Theme.of(context).primaryColor,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Theme.of(context).primaryColor,
+              labelColor: theme.primaryColor,
+              unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.5),
+              indicatorColor: theme.primaryColor,
               indicatorWeight: 3,
+              indicatorSize: TabBarIndicatorSize.label,
               tabs: const [
-                Tab(child: Text('ANALYSIS & FEEDBACK', style: TextStyle(fontWeight: FontWeight.bold))),
-                Tab(child: Text('DETECTED SKILLS', style: TextStyle(fontWeight: FontWeight.bold))),
+                Tab(child: Text('FEEDBACK', style: TextStyle(fontWeight: FontWeight.bold))),
+                Tab(child: Text('SKILLS', style: TextStyle(fontWeight: FontWeight.bold))),
               ],
             ),
             Expanded(
               child: TabBarView(
                 children: [
-                  _buildFeedbackList(),
-                  _buildSkillsList(),
+                  _buildFeedbackList(theme),
+                  _buildSkillsList(theme),
                 ],
               ),
             ),
@@ -464,90 +491,88 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
     );
   }
 
-  Widget _buildFeedbackList() {
+  Widget _buildFeedbackList(ThemeData theme) {
     final strengths = _analysisResults?['strengths'] as List<dynamic>? ?? [];
     final weaknesses = _analysisResults?['weaknesses'] as List<dynamic>? ?? [];
     final suggestions = _analysisResults?['suggestions'] as List<dynamic>? ?? [];
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       children: [
-        if (strengths.isNotEmpty) _buildFeedbackGroup('Key Strengths', strengths, Colors.green, Icons.check),
-        if (weaknesses.isNotEmpty) _buildFeedbackGroup('Areas for Improvement', weaknesses, Colors.redAccent, Icons.close),
-        if (suggestions.isNotEmpty) _buildFeedbackGroup('Actionable Suggestions', suggestions, Colors.blue, Icons.lightbulb_outline),
+        if (strengths.isNotEmpty) _buildFeedbackGroup(theme, 'Key Strengths', strengths, theme.primaryColor, Icons.verified_rounded),
+        if (weaknesses.isNotEmpty) _buildFeedbackGroup(theme, 'Improvements', weaknesses, Colors.orangeAccent, Icons.trending_up_rounded),
+        if (suggestions.isNotEmpty) _buildFeedbackGroup(theme, 'Action Plan', suggestions, theme.colorScheme.secondary, Icons.lightbulb_outline),
       ],
     );
   }
 
-  Widget _buildFeedbackGroup(String title, List<dynamic> items, Color color, IconData icon) {
+  Widget _buildFeedbackGroup(ThemeData theme, String title, List<dynamic> items, Color color, IconData icon) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(title.toUpperCase(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color, letterSpacing: 1.1)),
+        Row(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Text(title.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color, letterSpacing: 1.1)),
+          ],
         ),
+        const SizedBox(height: 12),
         ...items.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 10),
-              Expanded(child: Text(item.toString(), style: const TextStyle(fontSize: 14))),
-            ],
+          padding: const EdgeInsets.only(bottom: 12, left: 26),
+          child: Text('• ${item.toString()}', 
+            style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.8))
           ),
         )),
-        const Divider(),
+        const SizedBox(height: 8),
+        Divider(color: theme.colorScheme.outline.withOpacity(0.2)),
+        const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildSkillsList() {
+  Widget _buildSkillsList(ThemeData theme) {
     final skills = _analysisResults?['skills_detected'] as List<dynamic>? ?? [];
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(20.0),
       child: skills.isEmpty 
-        ? const Center(child: Text('No relevant skills found.'))
+        ? Center(child: Text('No relevant skills found.', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))))
         : Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: skills.map((s) => Chip(
-              label: Text(s.toString(), style: const TextStyle(fontSize: 12)),
-              backgroundColor: Colors.blue.withOpacity(0.05),
-              side: BorderSide(color: Colors.blue.withOpacity(0.2)),
+            spacing: 10,
+            runSpacing: 10,
+            children: skills.map((s) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+              ),
+              child: Text(s.toString(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.primaryColor)),
             )).toList(),
           ),
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(ThemeData theme) {
     return ElevatedButton(
       onPressed: _pickedFile == null ? null : _analyzeResume,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1A237E),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-        shadowColor: const Color(0xFF1A237E).withOpacity(0.4),
-      ),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.auto_fix_high_rounded),
           SizedBox(width: 12),
-          Text('SCAN & ANALYZE NOW', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+          Text('SCAN & ANALYZE NOW'),
         ],
       ),
     );
   }
 
-  Widget _buildReuploadButton() {
+  Widget _buildReuploadButton(ThemeData theme) {
     return TextButton.icon(
       onPressed: () => setState(() { _pickedFile = null; _analysisResults = null; }),
       icon: const Icon(Icons.refresh_rounded),
       label: const Text('SCAN ANOTHER RESUME'),
+      style: TextButton.styleFrom(foregroundColor: theme.primaryColor),
     );
   }
 }
