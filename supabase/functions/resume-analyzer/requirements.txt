@@ -1,0 +1,9 @@
+supabase-functions
+fastapi
+pymupdf
+python-docx
+spacy
+rake-nltk
+openai
+nltk
+python-multipart
