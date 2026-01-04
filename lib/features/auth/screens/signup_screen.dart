@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../services/auth_service.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -37,6 +38,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       await ref.read(authServiceProvider).signUp(
             _emailController.text.trim(),
             _passwordController.text.trim(),
+            fullName: _nameController.text.trim(),
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -314,7 +316,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     Expanded(
                       child: _buildSocialButton(
                         'Google',
-                        Icons.g_mobiledata_rounded,
+                        'https://www.vectorlogo.zone/logos/google/google-icon.svg',
                         theme,
                       ),
                     ),
@@ -322,7 +324,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     Expanded(
                       child: _buildSocialButton(
                         'GitHub',
-                        Icons.code, // Placeholder for GitHub
+                        'https://www.vectorlogo.zone/logos/github/github-icon.svg',
                         theme,
                       ),
                     ),
@@ -361,7 +363,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _buildSocialButton(String label, IconData icon, ThemeData theme) {
+  Widget _buildSocialButton(String label, String iconPath, ThemeData theme) {
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -379,7 +381,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white),
+              SvgPicture.network(
+                iconPath,
+                height: 24,
+                width: 24,
+                placeholderBuilder: (context) => const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 1)),
+              ),
               const SizedBox(width: 12),
               Text(
                 label,

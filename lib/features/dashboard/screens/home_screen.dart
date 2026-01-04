@@ -2,23 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/services/auth_service.dart';
+import '../services/verification_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateProvider).value;
-    final user = authState?.session?.user;
-    final userName = user?.email?.split('@').first ?? 'User';
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final authState = ref.watch(authStateProvider).value;
     final user = authState?.session?.user;
-    final userName = user?.email?.split('@').first ?? 'User';
-    final String displayUserName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
+    
+    // Get display name from metadata or fallback to email
+    String displayUserName = 'User';
+    if (user != null) {
+      final fullName = user.userMetadata?['full_name'];
+      if (fullName != null && fullName.toString().isNotEmpty) {
+        displayUserName = fullName.toString();
+      } else if (user.email != null) {
+        final emailPrefix = user.email!.split('@').first;
+        displayUserName = emailPrefix.substring(0, 1).toUpperCase() + emailPrefix.substring(1);
+      }
+    }
+    
+    final verificationStatus = ref.watch(verificationProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -104,7 +111,7 @@ class HomeScreen extends ConsumerWidget {
                               ),
                               child: Center(
                                 child: Text(
-                                  userName[0].toUpperCase(),
+                                  displayUserName[0].toUpperCase(),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -149,7 +156,7 @@ class HomeScreen extends ConsumerWidget {
                       Expanded(
                         child: _buildStatCard(
                           theme,
-                          '3',
+                          verificationStatus.value?.completedCount.toString() ?? '0',
                           'Verifications',
                           Icons.verified_user_rounded,
                           theme.primaryColor,
@@ -159,7 +166,7 @@ class HomeScreen extends ConsumerWidget {
                       Expanded(
                         child: _buildStatCard(
                           theme,
-                          '67%',
+                          '${((verificationStatus.value?.progress ?? 0) * 100).toInt()}%',
                           'Completion',
                           Icons.insights_rounded,
                           const Color(0xFFFDB241),
@@ -186,7 +193,7 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildProgressCard(theme),
+                      _buildProgressCard(theme, verificationStatus.value ?? VerificationStatus.initial()),
                     ],
                   ),
                 ),
@@ -234,8 +241,8 @@ class HomeScreen extends ConsumerWidget {
                       gradient: LinearGradient(
                         colors: [theme.primaryColor, theme.colorScheme.secondary],
                       ),
-                      status: 'Pending',
-                      statusColor: const Color(0xFFFDB241),
+                      status: VerificationStatus.getStatusLabel(verificationStatus.value?.identityStatus),
+                      statusColor: VerificationStatus.getStatusColor(verificationStatus.value?.identityStatus, theme),
                     ),
                     const SizedBox(height: 16),
                     _buildFeatureCard(
@@ -248,8 +255,8 @@ class HomeScreen extends ConsumerWidget {
                       gradient: const LinearGradient(
                         colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
                       ),
-                      status: 'Not Started',
-                      statusColor: const Color(0xFFA1A1AA),
+                      status: VerificationStatus.getStatusLabel(verificationStatus.value?.resumeStatus),
+                      statusColor: VerificationStatus.getStatusColor(verificationStatus.value?.resumeStatus, theme),
                     ),
                     const SizedBox(height: 16),
                     _buildFeatureCard(
@@ -262,8 +269,8 @@ class HomeScreen extends ConsumerWidget {
                       gradient: const LinearGradient(
                         colors: [Color(0xFFEC4899), Color(0xFFF43F5E)],
                       ),
-                      status: 'Completed',
-                      statusColor: const Color(0xFF10B981),
+                      status: VerificationStatus.getStatusLabel(verificationStatus.value?.skillsStatus),
+                      statusColor: VerificationStatus.getStatusColor(verificationStatus.value?.skillsStatus, theme),
                     ),
                     const SizedBox(height: 40),
                   ]),
@@ -356,7 +363,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProgressCard(ThemeData theme) {
+  Widget _buildProgressCard(ThemeData theme, VerificationStatus status) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -393,7 +400,7 @@ class HomeScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '67%',
+                  '${(status.progress * 100).toInt()}%',
                   style: TextStyle(
                     color: theme.primaryColor,
                     fontSize: 14,
@@ -407,18 +414,18 @@ class HomeScreen extends ConsumerWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: 0.67,
+              value: status.progress,
               backgroundColor: theme.scaffoldBackgroundColor,
               color: theme.primaryColor,
               minHeight: 10,
             ),
           ),
           const SizedBox(height: 24),
-          _buildProgressItem(theme, 'Identity Check', true, theme.primaryColor),
+          _buildProgressItem(theme, 'Identity Check', status.identityVerified, theme.primaryColor),
           const SizedBox(height: 12),
-          _buildProgressItem(theme, 'Resume Verification', false, theme.colorScheme.onSurface.withOpacity(0.3)),
+          _buildProgressItem(theme, 'Resume Verification', status.resumeVerified, status.resumeVerified ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.3)),
           const SizedBox(height: 12),
-          _buildProgressItem(theme, 'Expertise Validation', true, const Color(0xFF10B981)),
+          _buildProgressItem(theme, 'Expertise Validation', status.skillsVerified, status.skillsVerified ? const Color(0xFF10B981) : theme.colorScheme.onSurface.withOpacity(0.3)),
         ],
       ),
     );
@@ -568,4 +575,5 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+
 }

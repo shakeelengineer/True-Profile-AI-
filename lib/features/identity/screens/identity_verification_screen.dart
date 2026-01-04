@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class IdentityVerificationScreen extends StatefulWidget {
   const IdentityVerificationScreen({super.key});
@@ -46,23 +47,72 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     }
 
     setState(() => _isAnalyzing = true);
-    // Mock simulation
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() => _isAnalyzing = false);
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Verification Pending'),
-          content: const Text('Your images have been uploaded for AI analysis. Status will be updated soon.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+    
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        List<String> uploadedUrls = [];
+        
+        // 1. Upload images to 'identity' bucket
+        for (var i = 0; i < _selectedImages.length; i++) {
+          final file = File(_selectedImages[i].path);
+          final fileName = '${user.id}/${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+          
+          await Supabase.instance.client.storage
+              .from('identity')
+              .upload(fileName, file);
+          
+          final url = Supabase.instance.client.storage
+              .from('identity')
+              .getPublicUrl(fileName);
+          uploadedUrls.add(url);
+        }
+
+        // 2. Save pending status to verification_results
+        await Supabase.instance.client.from('verification_results').insert({
+          'user_id': user.id,
+          'verification_type': 'identity',
+          'status': 'pending',
+          'score': 0,
+          'data': {
+            'image_count': _selectedImages.length,
+            'image_urls': uploadedUrls,
+            'submitted_at': DateTime.now().toIso8601String(),
+          },
+          'feedback': ['Biometric analysis initiated. Verification pending AI review.'],
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: const Text('SYNTHESIS INITIATED', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+            content: const Text('Your biometric data has been securely uploaded to the AI engine for synthesis. Your profile status will update automatically upon completion.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                child: Text('ACKNOWLEDGE', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error initiating identity verification: $e');
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to initiate verification: $e')),
+        );
+      }
     }
   }
 

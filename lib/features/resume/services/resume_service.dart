@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 
 class ResumeService {
   final _supabase = Supabase.instance.client;
@@ -20,33 +21,63 @@ class ResumeService {
     }
   }
 
-  // 2. Call Python ATS API (Local Host)
-  Future<Map<String, dynamic>?> analyzeResume(File file) async {
+  // 2. Call Python ATS API (Optimized & More Resilient)
+  Future<Map<String, dynamic>?> analyzeResume(
+    File file, 
+    {required Function(double) onProgress}
+  ) async {
     try {
-      // For Physical Device: Use your PC's LAN IP (e.g., 192.168.10.5)
-      // For Emulator: Use 10.0.2.2
+      // PRO TIP: Change this IP to your PC's current LAN IP if testing on a physical device
       const String backendUrl = 'http://192.168.10.4:8000/analyze-resume';
       
-      var request = http.MultipartRequest('POST', Uri.parse(backendUrl));
-      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      final request = http.MultipartRequest('POST', Uri.parse(backendUrl));
       
-      // Add optional check for emulator fallback if needed
-      // ...
+      final bytes = await file.readAsBytes();
+      final totalByteCount = bytes.length;
       
-      print('Sending resume to $backendUrl');
-      var response = await request.send();
+      // Use a simple split for filename to avoid Platform issues on mobile
+      final fileName = file.path.contains('/') 
+          ? file.path.split('/').last 
+          : file.path.split('\\').last;
+
+      final multipartFile = http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: fileName,
+      );
       
+      request.files.add(multipartFile);
+      
+      // Immediate progress jump to indicate upload start
+      onProgress(0.5);
+      
+      print('Sending resume to $backendUrl (${(totalByteCount/1024).toStringAsFixed(2)} KB)...');
+      
+      // Increased timeout to 60s because local AI models (like LLMs or heavy NLP) can be slow
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          print('Request to $backendUrl timed out after 60 seconds.');
+          throw TimeoutException('JustScreen AI server is unreachable or taking too long to process.');
+        },
+      );
+      
+      onProgress(1.0);
+      
+      final response = await http.Response.fromStream(streamedResponse);
+      print('Backend Response Code: ${response.statusCode}');
+
       if (response.statusCode == 200) {
-        final respStr = await response.stream.bytesToString();
-        return json.decode(respStr);
+        return json.decode(response.body);
       } else {
-        print('Backend error: ${response.statusCode}');
-        // Fallback or better error handling
-        return null;
+        throw 'Server error (${response.statusCode}): ${response.body}';
       }
+    } on SocketException catch (e) {
+      print('Socket Error: $e');
+      throw 'Connection Refused: Ensure your backend is running at http://192.168.10.4:8000 and firewall is open.';
     } catch (e) {
-      print('Error calling ATS API: $e');
-      return null;
+      print('Critical Error in analyzeResume: $e');
+      rethrow;
     }
   }
 

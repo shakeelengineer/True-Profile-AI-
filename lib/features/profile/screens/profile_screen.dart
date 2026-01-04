@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/services/auth_service.dart';
+import '../../dashboard/services/verification_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -43,21 +44,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _saveProfile() async {
     setState(() => _isSaving = true);
     
-    // Simulate save operation
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (mounted) {
-      setState(() {
-        _isSaving = false;
-        _isEditing = false;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully'),
-          backgroundColor: Color(0xFF00D9FF),
-        ),
+    try {
+      await ref.read(authServiceProvider).updateProfile(
+        fullName: _nameController.text.trim(),
+        bio: _bioController.text.trim(),
       );
+      
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          _isEditing = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating profile: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -66,6 +81,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final authState = ref.watch(authStateProvider).value;
     final user = authState?.session?.user;
     final theme = Theme.of(context);
+    final verificationStatus = ref.watch(verificationProvider);
+
+    // Get display name for initial
+    String displayInitial = 'U';
+    if (user != null) {
+      final fullName = user.userMetadata?['full_name']?.toString();
+      if (fullName != null && fullName.isNotEmpty) {
+        displayInitial = fullName.substring(0, 1).toUpperCase();
+      } else if (user.email != null) {
+        displayInitial = user.email!.substring(0, 1).toUpperCase();
+      }
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -131,7 +158,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      user?.email?.substring(0, 1).toUpperCase() ?? 'U',
+                      displayInitial,
                       style: const TextStyle(
                         fontSize: 52,
                         fontWeight: FontWeight.bold,
@@ -186,15 +213,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatusItem(theme, 'Identity', Icons.verified_user_rounded, 'Pending', const Color(0xFFFDB241)),
-                  _buildStatusDivider(theme),
-                  _buildStatusItem(theme, 'Resume', Icons.description_rounded, 'None', const Color(0xFFA1A1AA)),
-                  _buildStatusDivider(theme),
-                  _buildStatusItem(theme, 'Skills', Icons.psychology_rounded, 'Verified', const Color(0xFF10B981)),
-                ],
+              child: verificationStatus.when(
+                data: (status) => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatusItem(
+                      theme, 
+                      'Identity', 
+                      Icons.verified_user_rounded, 
+                      VerificationStatus.getStatusLabel(status.identityStatus), 
+                      VerificationStatus.getStatusColor(status.identityStatus, theme)
+                    ),
+                    _buildStatusDivider(theme),
+                    _buildStatusItem(
+                      theme, 
+                      'Resume', 
+                      Icons.description_rounded, 
+                      VerificationStatus.getStatusLabel(status.resumeStatus), 
+                      VerificationStatus.getStatusColor(status.resumeStatus, theme)
+                    ),
+                    _buildStatusDivider(theme),
+                    _buildStatusItem(
+                      theme, 
+                      'Skills', 
+                      Icons.psychology_rounded, 
+                      VerificationStatus.getStatusLabel(status.skillsStatus), 
+                      VerificationStatus.getStatusColor(status.skillsStatus, theme)
+                    ),
+                  ],
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Text('Error loading status'),
               ),
             ),
             

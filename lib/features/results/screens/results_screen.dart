@@ -1,159 +1,148 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../dashboard/services/verification_provider.dart';
 
-class ResultsScreen extends ConsumerStatefulWidget {
+class ResultsScreen extends ConsumerWidget {
   const ResultsScreen({super.key});
 
   @override
-  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final historyAsync = ref.watch(verificationHistoryProvider);
 
-class _ResultsScreenState extends ConsumerState<ResultsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verification Results'),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: const Color(0xFF00D9FF),
-          labelColor: const Color(0xFF00D9FF),
-          unselectedLabelColor: const Color(0xFFA1A1AA),
-          tabs: const [
-            Tab(text: 'Identity'),
-            Tab(text: 'Resume'),
-            Tab(text: 'Skills'),
-          ],
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text('History & Integrity', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          bottom: TabBar(
+            indicatorColor: theme.primaryColor,
+            indicatorWeight: 3,
+            labelColor: theme.primaryColor,
+            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.4),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+            tabs: const [
+              Tab(text: 'IDENTITY'),
+              Tab(text: 'RESUME'),
+              Tab(text: 'SKILLS'),
+            ],
+          ),
+        ),
+        body: historyAsync.when(
+          data: (history) => TabBarView(
+            children: [
+              _buildHistoryList(theme, history, 'identity'),
+              _buildHistoryList(theme, history, 'resume'),
+              _buildHistoryList(theme, history, 'skills'),
+            ],
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error loading results: $e')),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+    );
+  }
+
+  Widget _buildHistoryList(ThemeData theme, List<Map<String, dynamic>> history, String type) {
+    final filtered = history.where((item) => item['verification_type'] == type).toList();
+
+    if (filtered.isEmpty) {
+      return _buildEmptyState(theme, 'No records found.', 'Start your first $type check to see history.');
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(24),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        final item = filtered[index];
+        final DateTime date = DateTime.parse(item['updated_at']);
+        final status = item['status'];
+        final score = item['score'] ?? 0;
+        final feedbackList = (item['feedback'] as List<dynamic>?) ?? [];
+        
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: _buildResultCard(
+            theme: theme,
+            title: _getDisplayTitle(type),
+            date: DateFormat('MMM dd, yyyy • HH:mm').format(date),
+            status: status.toString().toUpperCase(),
+            statusColor: _getStatusColor(status, theme),
+            icon: _getTypeIcon(type),
+            score: score,
+            feedback: feedbackList.isNotEmpty ? feedbackList.first.toString() : 'No feedback available.',
+            type: type,
+            details: item['data'] ?? {},
+          ),
+        );
+      },
+    );
+  }
+
+  String _getDisplayTitle(String type) {
+    switch (type) {
+      case 'identity': return 'Biometric Synthesis';
+      case 'resume': return 'ATS Merit Scan';
+      case 'skills': return 'Domain expertise';
+      default: return 'Verification';
+    }
+  }
+
+  IconData _getTypeIcon(String type) {
+    switch (type) {
+      case 'identity': return Icons.verified_user_rounded;
+      case 'resume': return Icons.description_rounded;
+      case 'skills': return Icons.psychology_rounded;
+      default: return Icons.check_circle_rounded;
+    }
+  }
+
+  Color _getStatusColor(dynamic status, ThemeData theme) {
+    switch (status) {
+      case 'completed': return const Color(0xFF10B981);
+      case 'pending': return const Color(0xFFFDB241);
+      case 'failed': return Colors.redAccent;
+      default: return theme.primaryColor;
+    }
+  }
+
+  Widget _buildEmptyState(ThemeData theme, String title, String subtitle) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildIdentityResults(),
-          _buildResumeResults(),
-          _buildSkillsResults(),
+          Icon(Icons.history_toggle_off_rounded, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          Text(title, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4), fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.3), fontSize: 12)),
         ],
       ),
     );
   }
 
-  Widget _buildIdentityResults() {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        _buildResultCard(
-          title: 'Face Verification',
-          date: 'Dec 28, 2025',
-          status: 'Pending',
-          statusColor: const Color(0xFFFDB241),
-          icon: Icons.face,
-          details: 'AI analysis in progress. You will be notified once verification is complete.',
-        ),
-        const SizedBox(height: 16),
-        _buildResultCard(
-          title: 'Previous Verification',
-          date: 'Dec 15, 2025',
-          status: 'Rejected',
-          statusColor: Colors.red,
-          icon: Icons.face,
-          details: 'Images were not clear enough. Please submit new photos.',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildResumeResults() {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        _buildAtsScoreCard(
-          fileName: 'John_Doe_Resume.pdf',
-          date: 'Dec 30, 2025',
-          score: 85,
-          feedback: [
-            'Strong keyword optimization',
-            'Good formatting and structure',
-            'Consider adding more quantifiable achievements',
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildAtsScoreCard(
-          fileName: 'Resume_v1.pdf',
-          date: 'Dec 10, 2025',
-          score: 62,
-          feedback: [
-            'Weak keyword density',
-            'Poor formatting detected',
-            'Missing contact information',
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkillsResults() {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        _buildSkillResultCard(
-          skill: 'Flutter',
-          date: 'Dec 29, 2025',
-          score: 90,
-          questionsTotal: 10,
-          questionsCorrect: 9,
-          level: 'Advanced',
-        ),
-        const SizedBox(height: 16),
-        _buildSkillResultCard(
-          skill: 'Python',
-          date: 'Dec 20, 2025',
-          score: 75,
-          questionsTotal: 10,
-          questionsCorrect: 7,
-          level: 'Intermediate',
-        ),
-        const SizedBox(height: 16),
-        _buildSkillResultCard(
-          skill: 'React',
-          date: 'Dec 15, 2025',
-          score: 60,
-          questionsTotal: 10,
-          questionsCorrect: 6,
-          level: 'Beginner',
-        ),
-      ],
-    );
-  }
-
   Widget _buildResultCard({
+    required ThemeData theme,
     required String title,
     required String date,
     required String status,
     required Color statusColor,
     required IconData icon,
-    required String details,
+    required int score,
+    required String feedback,
+    required String type,
+    required Map<String, dynamic> details,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F2937)),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,10 +151,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen>
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: statusColor, size: 24),
               ),
               const SizedBox(width: 16),
@@ -173,388 +159,59 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        color: Color(0xFFA1A1AA),
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(date, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4), fontSize: 12)),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                child: Text(status, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          if (type != 'identity') ...[
+            Row(
+              children: [
+                Text('SCORE: ', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4), fontSize: 12, fontWeight: FontWeight.bold)),
+                Text('$score%', style: TextStyle(color: statusColor, fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
           Container(
-            padding: const EdgeInsets.all(12),
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF0A0E27),
-              borderRadius: BorderRadius.circular(8),
+              color: theme.scaffoldBackgroundColor.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.colorScheme.outline.withOpacity(0.05)),
             ),
-            child: Text(
-              details,
-              style: const TextStyle(
-                color: Color(0xFFA1A1AA),
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAtsScoreCard({
-    required String fileName,
-    required String date,
-    required int score,
-    required List<String> feedback,
-  }) {
-    Color scoreColor;
-    String rating;
-    
-    if (score >= 80) {
-      scoreColor = const Color(0xFF00E676);
-      rating = 'Excellent';
-    } else if (score >= 60) {
-      scoreColor = const Color(0xFFFDB241);
-      rating = 'Good';
-    } else {
-      scoreColor = Colors.red;
-      rating = 'Needs Improvement';
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F2937)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: scoreColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.description, color: scoreColor, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      fileName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        color: Color(0xFFA1A1AA),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          
-          // Score Display
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: scoreColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: scoreColor.withOpacity(0.3)),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '$score',
-                        style: TextStyle(
-                          color: scoreColor,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'ATS Score',
-                        style: TextStyle(
-                          color: scoreColor,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0A0E27),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        score >= 80 ? Icons.emoji_events : Icons.trending_up,
-                        color: scoreColor,
-                        size: 36,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        rating,
-                        style: TextStyle(
-                          color: scoreColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Feedback
-          const Text(
-            'Feedback:',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...feedback.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.circle,
-                      size: 6,
-                      color: Color(0xFF00D9FF),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: const TextStyle(
-                          color: Color(0xFFA1A1AA),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkillResultCard({
-    required String skill,
-    required String date,
-    required int score,
-    required int questionsTotal,
-    required int questionsCorrect,
-    required String level,
-  }) {
-    Color levelColor;
-    
-    if (score >= 80) {
-      levelColor = const Color(0xFF00E676);
-    } else if (score >= 60) {
-      levelColor = const Color(0xFFFDB241);
-    } else {
-      levelColor = Colors.red;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F2937)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: levelColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.school, color: levelColor, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      skill,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        color: Color(0xFFA1A1AA),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: levelColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  level,
-                  style: TextStyle(
-                    color: levelColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          
-          // Progress Bar
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Score: $score%',
-                    style: TextStyle(
-                      color: levelColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '$questionsCorrect/$questionsTotal correct',
-                    style: const TextStyle(
-                      color: Color(0xFFA1A1AA),
-                      fontSize: 12,
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('AI FEEDBACK', style: TextStyle(color: theme.primaryColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                const SizedBox(height: 8),
+                Text(feedback, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7), fontSize: 13, height: 1.5)),
+                if (type == 'skills' && details.containsKey('skills_verified')) ...[
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: (details['skills_verified'] as List<dynamic>).map((s) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: theme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                      child: Text(s.toString(), style: TextStyle(color: theme.primaryColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                    )).toList(),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: score / 100,
-                  backgroundColor: const Color(0xFF0A0E27),
-                  color: levelColor,
-                  minHeight: 8,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.file_download_outlined, size: 18),
-                  label: const Text('Certificate'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF00D9FF),
-                    side: const BorderSide(color: Color(0xFF00D9FF)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Retake'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00D9FF),
-                    foregroundColor: const Color(0xFF0A0E27),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

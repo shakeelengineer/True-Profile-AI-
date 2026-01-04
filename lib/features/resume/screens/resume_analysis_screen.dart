@@ -38,37 +38,44 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
 
     setState(() {
       _isAnalyzing = true;
-      _scanningProgress = 0.0;
+      _scanningProgress = 0.1;
+      _scanningStep = 'Initializing JustScreen AI...';
       _analysisResults = null;
     });
-    
-    final steps = [
-      'Stripping PII for bias-free screening...',
-      'Extracting section headers...',
-      'Analyzing Education & Experience...',
-      'Detecting industry-specific keywords...',
-      'Calculating ATS compatibility score...',
-      'Generating explainable feedback...'
-    ];
 
     try {
       final file = File(_pickedFile!.path!);
       
-      // Start API call and simulated steps in parallel
-      final apiFuture = _resumeService.analyzeResume(file);
-      
-      // Animation handling
-      for (int i = 0; i < steps.length; i++) {
-        if (!mounted) return;
+      if (mounted) {
         setState(() {
-          _scanningStep = steps[i];
-          _scanningProgress = (i + 1) / (steps.length + 1); // Save some progress for completion
+          _scanningStep = 'Uploading Document...';
+          _scanningProgress = 0.3;
         });
-        await Future.delayed(const Duration(milliseconds: 400));
       }
 
-      final apiResult = await apiFuture;
-      
+      final apiResult = await _resumeService.analyzeResume(
+        file,
+        onProgress: (p) {
+          if (mounted) {
+            setState(() {
+              // Map 0-1.0 to 0.3 -> 0.7
+              _scanningProgress = 0.3 + (p * 0.4);
+              if (p >= 1.0) {
+                _scanningStep = 'AI is processing your resume... (Step 1/2)';
+              }
+            });
+          }
+        },
+      );
+
+      // If we got here, it's done or processing fast
+      if (mounted) {
+        setState(() {
+          _scanningStep = 'Finalizing AI Insights... (Step 2/2)';
+          _scanningProgress = 0.9;
+        });
+      }
+
       if (apiResult != null && mounted) {
         setState(() {
           _scanningProgress = 1.0;
@@ -78,29 +85,44 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
 
         final user = Supabase.instance.client.auth.currentUser;
         if (user != null && apiResult['resume_score'] != null) {
-          await _resumeService.saveAnalysisResult(
-            userId: user.id,
-            score: (apiResult['resume_score'] as num).toInt(),
-            skills: apiResult['skills_detected'] ?? [],
-            strengths: apiResult['strengths'] ?? [],
-            weaknesses: apiResult['weaknesses'] ?? [],
-            suggestions: apiResult['suggestions'] ?? [],
-            feedback: apiResult['ats_feedback'] ?? '',
-          );
+          try {
+            await _resumeService.uploadResume(user.id, file);
+            await _resumeService.saveAnalysisResult(
+              userId: user.id,
+              score: (apiResult['resume_score'] as num).toInt(),
+              skills: apiResult['skills_detected'] ?? [],
+              strengths: apiResult['strengths'] ?? [],
+              weaknesses: apiResult['weaknesses'] ?? [],
+              suggestions: apiResult['suggestions'] ?? [],
+              feedback: apiResult['ats_feedback'] ?? '',
+            );
+          } catch (e) {
+            print('Post-analysis storage error: $e');
+          }
         }
       } else {
-        if (mounted) {
-          setState(() => _isAnalyzing = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to analyze resume. Please check your internet or Supabase connection.')),
-          );
-        }
+        throw 'The AI engine returned an empty response.';
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isAnalyzing = false);
+        setState(() {
+          _isAnalyzing = false;
+          _scanningProgress = 0.0;
+        });
+        
+        String errorMsg = e.toString();
+        // Clean up common error strings for user
+        if (errorMsg.contains('Exception:')) {
+          errorMsg = errorMsg.split('Exception:').last.trim();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 8),
+            action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _analyzeResume),
+          ),
         );
       }
     }
@@ -243,8 +265,7 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
   }
 
   Widget _buildFilePreview(ThemeData theme) {
-    return Card(
-      elevation: 0,
+    return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
