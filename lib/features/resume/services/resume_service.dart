@@ -21,63 +21,114 @@ class ResumeService {
     }
   }
 
-  // 2. Call Python ATS API (Optimized & More Resilient)
+  // ===== CONFIGURATION =====
+  // Primary: Render.com (Production - Free Tier)
+  // Fallback: Local Server (Development)
+  static const String _renderUrl = 'https://ats-resume-service.onrender.com'; // Update this after deployment
+  static const String _localIp = '192.168.10.6'; // Your local network IP
+  static const String _localUrl = 'http://$_localIp:8000';
+  
+  // Set to false to use local server only (for development)
+  static const bool _useRender = true;
+  
+  // 2. Call Python ATS API (Smart Fallback: Render → Local)
   Future<Map<String, dynamic>?> analyzeResume(
     File file, 
     {required Function(double) onProgress}
   ) async {
-    try {
-      // PRO TIP: Change this IP to your PC's current LAN IP if testing on a physical device
-      const String backendUrl = 'http://192.168.10.4:8000/analyze-resume';
-      
-      final request = http.MultipartRequest('POST', Uri.parse(backendUrl));
-      
-      final bytes = await file.readAsBytes();
-      final totalByteCount = bytes.length;
-      
-      // Use a simple split for filename to avoid Platform issues on mobile
-      final fileName = file.path.contains('/') 
-          ? file.path.split('/').last 
-          : file.path.split('\\').last;
-
-      final multipartFile = http.MultipartFile.fromBytes(
-        'file',
-        bytes,
-        filename: fileName,
-      );
-      
-      request.files.add(multipartFile);
-      
-      // Immediate progress jump to indicate upload start
-      onProgress(0.5);
-      
-      print('Sending resume to $backendUrl (${(totalByteCount/1024).toStringAsFixed(2)} KB)...');
-      
-      // Increased timeout to 60s because local AI models (like LLMs or heavy NLP) can be slow
-      final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 60),
-        onTimeout: () {
-          print('Request to $backendUrl timed out after 60 seconds.');
-          throw TimeoutException('JustScreen AI server is unreachable or taking too long to process.');
-        },
-      );
-      
-      onProgress(1.0);
-      
-      final response = await http.Response.fromStream(streamedResponse);
-      print('Backend Response Code: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw 'Server error (${response.statusCode}): ${response.body}';
+    final bytes = await file.readAsBytes();
+    final fileName = file.path.contains('/') 
+        ? file.path.split('/').last 
+        : file.path.split('\\').last;
+    
+    // Try Render first (if enabled)
+    if (_useRender) {
+      try {
+        print('🌐 Attempting to connect to Render.com...');
+        final result = await _sendAnalysisRequest(
+          url: '$_renderUrl/analyze-resume',
+          bytes: bytes,
+          fileName: fileName,
+          onProgress: onProgress,
+          timeout: Duration(seconds: 120), // Render cold start can take 60s
+        );
+        
+        if (result != null) {
+          print('✅ Successfully analyzed via Render.com');
+          return result;
+        }
+      } catch (e) {
+        print('⚠️ Render.com failed: $e');
+        print('🔄 Falling back to local server...');
       }
-    } on SocketException catch (e) {
-      print('Socket Error: $e');
-      throw 'Connection Refused: Ensure your backend is running at http://192.168.10.4:8000 and firewall is open.';
+    }
+    
+    // Fallback to local server
+    try {
+      print('🏠 Attempting to connect to local server at $_localUrl...');
+      final result = await _sendAnalysisRequest(
+        url: '$_localUrl/analyze-resume',
+        bytes: bytes,
+        fileName: fileName,
+        onProgress: onProgress,
+        timeout: Duration(seconds: 90),
+      );
+      
+      if (result != null) {
+        print('✅ Successfully analyzed via local server');
+        return result;
+      }
     } catch (e) {
-      print('Critical Error in analyzeResume: $e');
-      rethrow;
+      print('❌ Local server also failed: $e');
+      throw 'Unable to connect to ATS service.\n\n'
+          '• Render: ${_useRender ? "Failed" : "Disabled"}\n'
+          '• Local: Failed\n\n'
+          'Please ensure your local Python server is running:\n'
+          'python main.py in backend/ats_service';
+    }
+    
+    throw 'Both Render and local servers are unavailable';
+  }
+  
+  // Helper method to send analysis request
+  Future<Map<String, dynamic>?> _sendAnalysisRequest({
+    required String url,
+    required List<int> bytes,
+    required String fileName,
+    required Function(double) onProgress,
+    required Duration timeout,
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse(url));
+    
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: fileName,
+    );
+    
+    request.files.add(multipartFile);
+    onProgress(0.5);
+    
+    print('📤 Sending resume to $url (${(bytes.length/1024).toStringAsFixed(2)} KB)...');
+    
+    final streamedResponse = await request.send().timeout(
+      timeout,
+      onTimeout: () {
+        throw TimeoutException('Request to $url timed out after ${timeout.inSeconds}s');
+      },
+    );
+    
+    onProgress(0.8);
+    
+    final response = await http.Response.fromStream(streamedResponse);
+    print('📥 Response Code: ${response.statusCode}');
+    
+    onProgress(1.0);
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw 'Server error (${response.statusCode}): ${response.body}';
     }
   }
 

@@ -68,11 +68,11 @@ class ResultsScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 16),
           child: _buildResultCard(
             theme: theme,
-            title: _getDisplayTitle(type),
+            title: _getDisplayTitle(type, item['data'] ?? {}),
             date: DateFormat('MMM dd, yyyy • HH:mm').format(date),
             status: status.toString().toUpperCase(),
             statusColor: _getStatusColor(status, theme),
-            icon: _getTypeIcon(type),
+            icon: _getTypeIcon(type, item['data'] ?? {}),
             score: score,
             feedback: feedbackList.isNotEmpty ? feedbackList.first.toString() : 'No feedback available.',
             type: type,
@@ -83,20 +83,42 @@ class ResultsScreen extends ConsumerWidget {
     );
   }
 
-  String _getDisplayTitle(String type) {
+  String _getDisplayTitle(String type, Map<String, dynamic> data) {
     switch (type) {
       case 'identity': return 'Biometric Synthesis';
       case 'resume': return 'ATS Merit Scan';
-      case 'skills': return 'Domain expertise';
+      case 'skills': 
+        final skill = data['skill'] ?? 'Expertise';
+        return '$skill Validation';
       default: return 'Verification';
     }
   }
 
-  IconData _getTypeIcon(String type) {
+  IconData _getTypeIcon(String type, Map<String, dynamic> data) {
+    if (type == 'skills') {
+      final skill = (data['skill'] ?? '').toString().toLowerCase();
+      if (skill.contains('python')) return Icons.code_rounded;
+      if (skill.contains('java')) return Icons.coffee_rounded;
+      if (skill.contains('flutter')) return Icons.smartphone_rounded;
+      if (skill.contains('react')) return Icons.web_rounded;
+      if (skill.contains('node')) return Icons.javascript_rounded;
+      if (skill.contains('cpp') || skill.contains('c++')) return Icons.terminal_rounded;
+      if (skill.contains('c#')) return Icons.grid_view_rounded;
+      if (skill.contains('sql')) return Icons.storage_rounded;
+      if (skill.contains('aws')) return Icons.cloud_rounded;
+      if (skill.contains('machine')) return Icons.analytics_rounded;
+      if (skill.contains('intelligence')) return Icons.psychology_rounded;
+      if (skill.contains('cyber')) return Icons.security_rounded;
+      if (skill.contains('network')) return Icons.lan_rounded;
+      if (skill.contains('operating')) return Icons.settings_suggest_rounded;
+      if (skill.contains('data structure')) return Icons.account_tree_rounded;
+      if (skill.contains('algo')) return Icons.functions_rounded;
+      return Icons.psychology_rounded;
+    }
+    
     switch (type) {
       case 'identity': return Icons.verified_user_rounded;
       case 'resume': return Icons.description_rounded;
-      case 'skills': return Icons.psychology_rounded;
       default: return Icons.check_circle_rounded;
     }
   }

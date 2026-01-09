@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/services/auth_service.dart';
 import '../../dashboard/services/verification_provider.dart';
+import '../../skills/widgets/skill_badges_widget.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -282,6 +283,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               enabled: _isEditing,
               maxLines: 3,
             ),
+            
+            const SizedBox(height: 32),
+            
+            // Skill Badges Section
+            _buildSectionHeader(theme, 'Verified Badges'),
+            const SizedBox(height: 16),
+            const SkillBadgesWidget(),
             
             const SizedBox(height: 32),
             

@@ -10,6 +10,7 @@ class VerificationStatus {
   final String resumeStatus;
   final String skillsStatus;
   final int completedCount;
+  final int badgeCount;
   final double progress;
 
   VerificationStatus({
@@ -20,6 +21,7 @@ class VerificationStatus {
     required this.resumeStatus,
     required this.skillsStatus,
     required this.completedCount,
+    required this.badgeCount,
     required this.progress,
   });
 
@@ -32,6 +34,7 @@ class VerificationStatus {
       resumeStatus: 'not_started',
       skillsStatus: 'not_started',
       completedCount: 0,
+      badgeCount: 0,
       progress: 0.0,
     );
   }
@@ -39,6 +42,7 @@ class VerificationStatus {
   static String getStatusLabel(String? status) {
     switch (status) {
       case 'completed': return 'Completed';
+      case 'verified': return 'Verified';
       case 'pending': return 'In Progress';
       case 'failed': return 'Action Required';
       default: return 'Not Started';
@@ -47,7 +51,8 @@ class VerificationStatus {
 
   static Color getStatusColor(String? status, ThemeData theme) {
     switch (status) {
-      case 'completed': return const Color(0xFF10B981);
+      case 'completed': 
+      case 'verified': return const Color(0xFF10B981);
       case 'pending': return const Color(0xFFFDB241);
       case 'failed': return Colors.redAccent;
       default: return theme.colorScheme.onSurface.withOpacity(0.3);
@@ -86,7 +91,7 @@ final verificationProvider = StreamProvider<VerificationStatus>((ref) {
         int count = 0;
         if (idStatus == 'completed') count++;
         if (resStatus == 'completed') count++;
-        if (skStatus == 'completed') count++;
+        if (skStatus == 'completed' || skStatus == 'verified') count++;
 
         // Progress includes pending items too
         double progressVal = 0;
@@ -97,11 +102,12 @@ final verificationProvider = StreamProvider<VerificationStatus>((ref) {
         return VerificationStatus(
           identityVerified: idStatus == 'completed',
           resumeVerified: resStatus == 'completed',
-          skillsVerified: skStatus == 'completed',
+          skillsVerified: skStatus == 'completed' || skStatus == 'verified',
           identityStatus: idStatus,
           resumeStatus: resStatus,
           skillsStatus: skStatus,
           completedCount: count,
+          badgeCount: count, // This should ideally be fetched from skill_badges table
           progress: progressVal,
         );
       });

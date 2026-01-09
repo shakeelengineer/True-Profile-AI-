@@ -288,48 +288,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
 
-                // Divider
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: theme.colorScheme.outline.withOpacity(0.3))),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'or continue with',
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: theme.colorScheme.outline.withOpacity(0.3))),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // Social Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSocialButton(
-                        'Google',
-                        'https://www.vectorlogo.zone/logos/google/google-icon.svg',
-                        theme,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSocialButton(
-                        'GitHub',
-                        'https://www.vectorlogo.zone/logos/github/github-icon.svg',
-                        theme,
-                      ),
-                    ),
-                  ],
-                ),
 
                 const SizedBox(height: 48),
 
@@ -363,43 +322,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _buildSocialButton(String label, String iconPath, ThemeData theme) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.5)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // TODO: Implement social login
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.network(
-                iconPath,
-                height: 24,
-                width: 24,
-                placeholderBuilder: (context) => const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 1)),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 }
 

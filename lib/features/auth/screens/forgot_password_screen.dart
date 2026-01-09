@@ -143,8 +143,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   const SizedBox(height: 8),
                   Text(
                     _currentStep == 0 
-                      ? 'Enter your email to receive a recovery code.' 
-                      : 'Enter the code from your email and your new password.',
+                      ? 'Enter your email to receive an 8-digit recovery token.' 
+                      : 'Enter the 8-digit token from your email and your new password.',
                     style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 16),
                   ),
 

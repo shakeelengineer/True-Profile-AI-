@@ -44,6 +44,17 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
     });
 
     try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        await Supabase.instance.client.from('verification_results').insert({
+          'user_id': user.id,
+          'verification_type': 'resume',
+          'status': 'pending',
+          'score': 0,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
       final file = File(_pickedFile!.path!);
       
       if (mounted) {
@@ -58,10 +69,12 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen> {
         onProgress: (p) {
           if (mounted) {
             setState(() {
-              // Map 0-1.0 to 0.3 -> 0.7
               _scanningProgress = 0.3 + (p * 0.4);
               if (p >= 1.0) {
-                _scanningStep = 'AI is processing your resume... (Step 1/2)';
+                final fileSizeMB = file.lengthSync() / (1024 * 1024);
+                _scanningStep = fileSizeMB > 1.0 
+                    ? 'Processing large file with AI... this may take 1-2 mins.' 
+                    : 'AI is processing your resume... (Step 1/2)';
               }
             });
           }

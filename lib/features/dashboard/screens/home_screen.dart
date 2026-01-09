@@ -86,9 +86,7 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ),
                           const Spacer(),
-                          // Notifications
-                          _buildCircleButton(Icons.notifications_outlined, theme, () {}),
-                          const SizedBox(width: 12),
+
                           // Profile Avatar
                           GestureDetector(
                             onTap: () => context.push('/profile'),
@@ -263,14 +261,20 @@ class HomeScreen extends ConsumerWidget {
                       context,
                       theme,
                       title: 'Skill Verification',
-                      description: 'Prove your skills with AI quizzes',
+                      description: (verificationStatus.value?.badgeCount ?? 0) > 0 
+                          ? 'You have ${verificationStatus.value?.badgeCount} verified badges'
+                          : 'Prove your skills with AI quizzes',
                       icon: Icons.psychology_rounded,
                       route: '/skills',
                       gradient: const LinearGradient(
                         colors: [Color(0xFFEC4899), Color(0xFFF43F5E)],
                       ),
-                      status: VerificationStatus.getStatusLabel(verificationStatus.value?.skillsStatus),
-                      statusColor: VerificationStatus.getStatusColor(verificationStatus.value?.skillsStatus, theme),
+                      status: (verificationStatus.value?.badgeCount ?? 0) > 0 
+                          ? 'VERIFIED' 
+                          : VerificationStatus.getStatusLabel(verificationStatus.value?.skillsStatus),
+                      statusColor: (verificationStatus.value?.badgeCount ?? 0) > 0 
+                          ? const Color(0xFF10B981)
+                          : VerificationStatus.getStatusColor(verificationStatus.value?.skillsStatus, theme),
                     ),
                     const SizedBox(height: 40),
                   ]),
@@ -307,19 +311,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCircleButton(IconData icon, ThemeData theme, VoidCallback onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        shape: BoxShape.circle,
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.5)),
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 22),
-        onPressed: onTap,
-      ),
-    );
-  }
+
 
   Widget _buildStatCard(ThemeData theme, String value, String label, IconData icon, Color color) {
     return Container(
@@ -421,33 +413,58 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _buildProgressItem(theme, 'Identity Check', status.identityVerified, theme.primaryColor),
+          _buildProgressItem(theme, 'Identity Check', status.identityStatus, theme.primaryColor),
           const SizedBox(height: 12),
-          _buildProgressItem(theme, 'Resume Verification', status.resumeVerified, status.resumeVerified ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.3)),
+          _buildProgressItem(theme, 'Resume Verification', status.resumeStatus, theme.primaryColor),
           const SizedBox(height: 12),
-          _buildProgressItem(theme, 'Expertise Validation', status.skillsVerified, status.skillsVerified ? const Color(0xFF10B981) : theme.colorScheme.onSurface.withOpacity(0.3)),
+          _buildProgressItem(theme, 'Expertise Validation', status.skillsStatus, const Color(0xFF10B981)),
         ],
       ),
     );
   }
 
-  Widget _buildProgressItem(ThemeData theme, String title, bool completed, Color color) {
+  Widget _buildProgressItem(ThemeData theme, String title, String status, Color activeColor) {
+    bool isCompleted = status == 'completed' || status == 'verified';
+    bool isPending = status == 'pending';
+    
     return Row(
       children: [
-        Icon(
-          completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-          color: color,
-          size: 20,
-        ),
+        if (isPending)
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+            ),
+          )
+        else
+          Icon(
+            isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            color: isCompleted ? activeColor : theme.colorScheme.onSurface.withOpacity(0.3),
+            size: 20,
+          ),
         const SizedBox(width: 12),
         Text(
           title,
           style: TextStyle(
-            color: completed ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.5),
+            color: isCompleted || isPending ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.5),
             fontSize: 14,
-            fontWeight: completed ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: isCompleted || isPending ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
+        if (isPending) ...[
+          const Spacer(),
+          Text(
+            'In Progress',
+            style: TextStyle(
+              color: activeColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ],
     );
   }
