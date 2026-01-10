@@ -71,43 +71,53 @@ final verificationProvider = StreamProvider<VerificationStatus>((ref) {
       .stream(primaryKey: ['id'])
       .eq('user_id', user.id)
       .map((results) {
+        // Initialize statuses
         String idStatus = 'not_started';
         String resStatus = 'not_started';
         String skStatus = 'not_started';
 
-        // Sort results by updated_at descending to get the latest status for each type
-        final sortedResults = List<Map<String, dynamic>>.from(results)
+        // Sort by updated_at to get the most recent record for each type
+        final sorted = List<Map<String, dynamic>>.from(results)
           ..sort((a, b) => b['updated_at'].compareTo(a['updated_at']));
 
-        for (var result in sortedResults) {
-          final type = result['verification_type'];
-          final status = result['status'];
-          
-          if (type == 'identity' && idStatus == 'not_started') idStatus = status;
-          if (type == 'resume' && resStatus == 'not_started') resStatus = status;
-          if (type == 'skills' && skStatus == 'not_started') skStatus = status;
+        // Get the SINGLE latest status for each type
+        for (var r in sorted) {
+          final t = r['verification_type'];
+          final s = r['status'];
+          if (t == 'identity' && idStatus == 'not_started') idStatus = s;
+          if (t == 'resume' && resStatus == 'not_started') resStatus = s;
+          if (t == 'skills' && skStatus == 'not_started') skStatus = s;
         }
 
-        int count = 0;
-        if (idStatus == 'completed') count++;
-        if (resStatus == 'completed') count++;
-        if (skStatus == 'completed' || skStatus == 'verified') count++;
+        // Logic check for strictly Successful states
+        final bool isIdDone = idStatus == 'completed' || idStatus == 'verified';
+        final bool isResDone = resStatus == 'completed' || resStatus == 'verified';
+        final bool isSkDone = skStatus == 'completed' || skStatus == 'verified';
 
-        // Progress includes pending items too
-        double progressVal = 0;
-        if (idStatus != 'not_started') progressVal += 0.33;
-        if (resStatus != 'not_started') progressVal += 0.33;
-        if (skStatus != 'not_started') progressVal += 0.34;
+        // Calculate count based on completed items
+        int completedCount = 0;
+        if (isIdDone) completedCount++;
+        if (isResDone) completedCount++;
+        if (isSkDone) completedCount++;
+
+        // Strict Weighted Progress: Identity(50%) + Resume(25%) + Skills(25%)
+        double progressVal = 0.0;
+        if (isIdDone) progressVal += 0.50;
+        if (isResDone) progressVal += 0.25;
+        if (isSkDone) progressVal += 0.25;
+
+        // Force exactly 1.0 if all three are finished
+        if (isIdDone && isResDone && isSkDone) progressVal = 1.0;
 
         return VerificationStatus(
-          identityVerified: idStatus == 'completed',
-          resumeVerified: resStatus == 'completed',
-          skillsVerified: skStatus == 'completed' || skStatus == 'verified',
+          identityVerified: isIdDone,
+          resumeVerified: isResDone,
+          skillsVerified: isSkDone,
           identityStatus: idStatus,
           resumeStatus: resStatus,
           skillsStatus: skStatus,
-          completedCount: count,
-          badgeCount: count, // This should ideally be fetched from skill_badges table
+          completedCount: completedCount,
+          badgeCount: completedCount,
           progress: progressVal,
         );
       });

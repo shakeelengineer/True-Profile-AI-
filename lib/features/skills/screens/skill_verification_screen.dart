@@ -107,7 +107,7 @@ class _SkillVerificationScreenState extends ConsumerState<SkillVerificationScree
         final percentage = ((_score / _questions.length) * 100).toInt();
         final passed = percentage >= _passingScore;
         
-        await Supabase.instance.client.from('verification_results').insert({
+        await Supabase.instance.client.from('verification_results').upsert({
           'user_id': user.id,
           'verification_type': 'skills',
           'status': passed ? 'verified' : 'completed',

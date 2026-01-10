@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import '../../../core/constants/api_constants.dart';
 
 class SkillQuizService {
-  // Use 10.0.2.2 for Android emulator to access host machine's localhost
-  static const String baseUrl = 'http://192.168.10.6:8000';
+  // Use unified Base URL from ApiConstants
+  static const String baseUrl = ApiConstants.baseUrl;
   
   /// Generate quiz questions for a specific skill
   Future<Map<String, dynamic>> generateQuiz(String skill) async {

@@ -108,14 +108,29 @@ class HomeScreen extends ConsumerWidget {
                                 ],
                               ),
                               child: Center(
-                                child: Text(
-                                  displayUserName[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
+                                child: (user?.userMetadata?['avatar_url'] != null)
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(22),
+                                        child: Image.network(
+                                          user!.userMetadata!['avatar_url'],
+                                          key: ValueKey(user.userMetadata!['avatar_url']),
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => Text(
+                                            displayUserName[0].toUpperCase(),
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        displayUserName[0].toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),

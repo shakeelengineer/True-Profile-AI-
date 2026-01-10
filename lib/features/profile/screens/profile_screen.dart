@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/services/auth_service.dart';
 import '../../dashboard/services/verification_provider.dart';
 import '../../skills/widgets/skill_badges_widget.dart';
+import '../../identity/screens/face_capture_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -158,14 +159,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     border: Border.all(color: Colors.white.withOpacity(0.1), width: 4),
                   ),
                   child: Center(
-                    child: Text(
-                      displayInitial,
-                      style: const TextStyle(
-                        fontSize: 52,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: (user?.userMetadata?['avatar_url'] != null)
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(65),
+                            child: Image.network(
+                              user!.userMetadata!['avatar_url'],
+                              key: ValueKey(user.userMetadata!['avatar_url']), // Force refresh
+                              width: 130,
+                              height: 130,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                print('Image Load Error: $error');
+                                return Text(
+                                  displayInitial,
+                                  style: const TextStyle(fontSize: 52, fontWeight: FontWeight.bold, color: Colors.white),
+                                );
+                              },
+                            ),
+                          )
+                        : Text(
+                            displayInitial,
+                            style: const TextStyle(
+                              fontSize: 52,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
                 if (_isEditing)
@@ -173,7 +192,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     bottom: 4,
                     right: 4,
                     child: GestureDetector(
-                      onTap: () {}, // TODO: Implement image picker
+                      onTap: () => context.push('/face-capture'),
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(

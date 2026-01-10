@@ -3,17 +3,11 @@
 This guide explains how to run the application, how to handle network changes (IP updates), and which environment files are involved.
 
 ---
+# � True-Profile AI Unified Backend
 
-## 🛠️ Phase 1: Start the Backend (Python)
+I have unified all modules (ATS, Skills, and Identity Verification) into a single server. You now only need to run ONE command to start everything.
 
-The backend must be running for **JustScreen AI** (Resume Analysis) to work.
-
-### 1. Environment Details
-- **Python Environment**: Uses the virtual environment located at the root: `.venv/`
-- **Script Location**: `backend/ats_service/main.py`
-- **Default Port**: `8000`
-
-### 2. How to Run
+## 1. Unified Running Instructions
 Open a terminal and run:
 ```powershell
 # 1. Navigate to backend folder
@@ -22,11 +16,13 @@ cd "e:\Documents\AI\True-Profile AI\true_profile_ai\backend\ats_service"
 # 2. Activate Virtual Environment
 ..\..\.venv\Scripts\activate
 
-# 3. Start Server
+# 3. Install Unified Requirements (One-time)
+pip install -r requirements.txt
+
+# 4. Start Unified Server (ATS + Skills + Face Verification)
 python main.py
 ```
-
----
+This server will run on **Port 8000**.
 
 ## 🌐 Phase 2: Handling Network Changes (IP Updates)
 
@@ -41,13 +37,13 @@ Look for **IPv4 Address** under your active adapter (e.g., `10.69.32.169` or `19
 
 ### 2. Update the Code
 Open this file:
-`lib/features/resume/services/resume_service.dart`
+`lib/core/constants/api_constants.dart`
 
-Find the following line (around **Line 32**) and update it with your new IP:
+Find the following line (around **Line 4**) and update it with your new IP:
 ```dart
-// Update this string with the IP from ipconfig
-String baseUrl = 'YOUR_NEW_IP_HERE'; 
+static const String localIp = 'YOUR_NEW_IP_HERE'; 
 ```
+This single change will update the ATS, Skills, and Identity modules automatically!
 
 ---
 

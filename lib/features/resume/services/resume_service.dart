@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 
+import '../../../core/constants/api_constants.dart';
+
 class ResumeService {
   final _supabase = Supabase.instance.client;
 
@@ -22,11 +24,8 @@ class ResumeService {
   }
 
   // ===== CONFIGURATION =====
-  // Primary: Render.com (Production - Free Tier)
-  // Fallback: Local Server (Development)
-  static const String _renderUrl = 'https://ats-resume-service.onrender.com'; // Update this after deployment
-  static const String _localIp = '192.168.10.6'; // Your local network IP
-  static const String _localUrl = 'http://$_localIp:8000';
+  static const String _renderUrl = ApiConstants.renderUrl;
+  static const String _localUrl = ApiConstants.baseUrl;
   
   // Set to false to use local server only (for development)
   static const bool _useRender = true;
@@ -143,7 +142,8 @@ class ResumeService {
     required String feedback,
   }) async {
     try {
-      await _supabase.from('verification_results').insert({
+      // Use Upsert (Update if exists, else insert) to keep one record per user
+      await _supabase.from('verification_results').upsert({
         'user_id': userId,
         'verification_type': 'resume',
         'status': 'completed',

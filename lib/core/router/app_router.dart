@@ -15,10 +15,9 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/results/screens/results_screen.dart';
 import '../../features/settings/screens/privacy_policy_screen.dart';
 import '../../features/settings/screens/about_screen.dart';
+import '../../features/identity/screens/face_capture_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: GoRouterRefreshStream(
@@ -99,6 +98,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/about',
         builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: '/face-capture',
+        builder: (context, state) => const FaceCaptureScreen(),
       ),
     ],
   );
