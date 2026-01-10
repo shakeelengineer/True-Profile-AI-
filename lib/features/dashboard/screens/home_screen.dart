@@ -276,20 +276,16 @@ class HomeScreen extends ConsumerWidget {
                       context,
                       theme,
                       title: 'Skill Verification',
-                      description: (verificationStatus.value?.badgeCount ?? 0) > 0 
-                          ? 'You have ${verificationStatus.value?.badgeCount} verified badges'
+                      description: (verificationStatus.value?.skillsVerified ?? false)
+                          ? 'You have earned professional badges'
                           : 'Prove your skills with AI quizzes',
                       icon: Icons.psychology_rounded,
                       route: '/skills',
                       gradient: const LinearGradient(
                         colors: [Color(0xFFEC4899), Color(0xFFF43F5E)],
                       ),
-                      status: (verificationStatus.value?.badgeCount ?? 0) > 0 
-                          ? 'VERIFIED' 
-                          : VerificationStatus.getStatusLabel(verificationStatus.value?.skillsStatus),
-                      statusColor: (verificationStatus.value?.badgeCount ?? 0) > 0 
-                          ? const Color(0xFF10B981)
-                          : VerificationStatus.getStatusColor(verificationStatus.value?.skillsStatus, theme),
+                      status: VerificationStatus.getStatusLabel(verificationStatus.value?.skillsStatus),
+                      statusColor: VerificationStatus.getStatusColor(verificationStatus.value?.skillsStatus, theme),
                     ),
                     const SizedBox(height: 40),
                   ]),

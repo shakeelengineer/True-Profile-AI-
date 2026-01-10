@@ -89,24 +89,27 @@ final verificationProvider = StreamProvider<VerificationStatus>((ref) {
           if (t == 'skills' && skStatus == 'not_started') skStatus = s;
         }
 
-        // Logic check for strictly Successful states
+        // Logic check for successful states
+        // Identity and Resume succeed with 'completed' or 'verified'
         final bool isIdDone = idStatus == 'completed' || idStatus == 'verified';
         final bool isResDone = resStatus == 'completed' || resStatus == 'verified';
-        final bool isSkDone = skStatus == 'completed' || skStatus == 'verified';
+        
+        // Skills ONLY succeed if 'verified' (passed the quiz)
+        final bool isSkDone = skStatus == 'verified';
 
-        // Calculate count based on completed items
+        // Calculate completed count for the stats card
         int completedCount = 0;
         if (isIdDone) completedCount++;
         if (isResDone) completedCount++;
         if (isSkDone) completedCount++;
 
-        // Strict Weighted Progress: Identity(50%) + Resume(25%) + Skills(25%)
+        // Weighted Progress: Identity(50%) + Resume(25%) + Skills(25%)
         double progressVal = 0.0;
         if (isIdDone) progressVal += 0.50;
         if (isResDone) progressVal += 0.25;
         if (isSkDone) progressVal += 0.25;
 
-        // Force exactly 1.0 if all three are finished
+        // Final snap to 100%
         if (isIdDone && isResDone && isSkDone) progressVal = 1.0;
 
         return VerificationStatus(
